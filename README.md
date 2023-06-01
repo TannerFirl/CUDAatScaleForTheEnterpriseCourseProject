@@ -1,32 +1,40 @@
-# CUDAatScaleForTheEnterpriseCourseProjectTemplate
-This is a template for the course project for the CUDA at Scale for the Enterprise
-
 ## Project Description
 
-Beyond just being a template for course members, this project can be used by non-course members as the general structure for CUDA projects.
+This project overlays an rgba image on an rgb image using an alpha filter. The filter is implemented as a cuda kernel.
+
+# CUDAatScaleForTheEnterpriseCourseProject Quickstart
+
+## Overlay included sample images (test setup)
+
+```
+make clean build run
+```
+
+## Overlay custom images
+
+NOTE: the watermark MUST be an RGBA transparent .png file. Not all .png files are RGBA transparent. I have had luck using [this tool to convert images to RGBA transparent .png files](https://fconvert.com/image/convert-to-png/). Select `Depth color: 32 (True color, RGBA, transparent)` and download the converted image. For more information regarding types of .png files, click [here](http://www.libpng.org/pub/png/book/chapter08.html#png.ch08.div.5.8).
+
+```
+make clean build
+./bin/watermark <8bit-rgb-img-filename.png> <8bit-rgba-watermark-filename.png> [output.png]
+```
 
 ## Code Organization
 
 ```bin/```
-This folder should hold all binary/executable code that is built automatically or manually. Executable code should have use the .exe extension or programming language-specific extension.
+This folder holds all binary/executable code that is built automatically or manually.
 
 ```data/```
-This folder should hold all example data in any format. If the original data is rather large or can be brought in via scripts, this can be left blank in the respository, so that it doesn't require major downloads when all that is desired is the code/structure.
-
-```lib/```
-Any libraries that are not installed via the Operating System-specific package manager should be placed here, so that it is easier for inclusion/linking.
+This folder holds all example data in any format.
 
 ```src/```
-The source code should be placed here in a hierarchical fashion, as appropriate.
+The source code for this project.
 
 ```README.md```
-This file should hold the description of the project so that anyone cloning or deciding if they want to clone this repository can understand its purpose to help with their decision.
+The description of the project so that anyone cloning or deciding if they want to clone this repository can understand its purpose to help with their decision.
 
-```INSTALL```
-This file should hold the human-readable set of instructions for installing the code so that it can be executed. If possible it should be organized around different operating systems, so that it can be done by as many people as possible with different constraints.
+```Makefile```
+Script for building this project's code
 
-```Makefile or CMAkeLists.txt or build.sh```
-There should be some rudimentary scripts for building your project's code in an automatic fashion.
-
-```run.sh```
-An optional script used to run your executable code, either with or without command-line arguments.
+```third-party/cuda-samples```
+cuda's samples repository, which is a submodule of this repository.

@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
   }
 
   if(argc != 3 && argc != 4){
-    printf("Usage: %s <img-filename.png> <watermark-filename.png> [output.png]\nOutput defaults to output.png\n", argv[0]);
+    printf("Usage: %s <8bit-rgb-img-filename.png> <8bit-rgba-watermark-filename.png> [output.png]\n\tOutput defaults to output.png\n", argv[0]);
     exit(1);
   }
 
