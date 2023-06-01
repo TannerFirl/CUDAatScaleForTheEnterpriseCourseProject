@@ -1,8 +1,16 @@
 ## Project Description
 
-This project overlays an rgba image on an rgb image using an alpha filter. The filter is implemented as a cuda kernel.
+This project overlays an rgba image on an rgb image using alpha blending. The alpha blending is implemented as a cuda kernel. For information on what alpha blending is and why it is useful, click [here](https://learnopencv.com/alpha-blending-using-opencv-cpp-python/).
 
 # CUDAatScaleForTheEnterpriseCourseProject Quickstart
+
+To run this, you must have access to an nvidia gpu and software. As such, you may wish to use a lab environment from the ["CUDA at Scale for the Enterprise" Coursera course](https://www.coursera.org/learn/cuda-at-scale-for-the-enterprise/home/welcome) to execute it. If you have not already, clone this repository, cd to its base directory, and initialize git submodules:
+
+```
+git clone https://github.com/TannerFirl/CUDAatScaleForTheEnterpriseCourseProject.git
+cd CUDAatScaleForTheEnterpriseCourseProject
+git submodule --init --recursive
+```
 
 ## Overlay included sample images (test setup)
 
@@ -11,7 +19,7 @@ git submodule --init --recursive
 make clean build run
 ```
 
-output.png will contain the sample images overlayed using an alpha filter.
+output.png will contain the sample images overlayed using alpha blending.
 
 ## Overlay custom images
 
