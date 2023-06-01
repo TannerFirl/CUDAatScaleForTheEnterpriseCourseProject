@@ -4,3 +4,7 @@
 *.ptx
 *.cubin
 *.fatbin
+
+output.png
+bin/watermark
+bin/watermark.o
