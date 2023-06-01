@@ -277,7 +277,7 @@ ALL_LDFLAGS += $(addprefix -Xlinker ,$(LDFLAGS))
 ALL_LDFLAGS += $(addprefix -Xlinker ,$(EXTRA_LDFLAGS))
 
 # Common includes and paths for CUDA
-INCLUDES  := -I../Common
+INCLUDES  := -I../Common -isystem /home/coder/project/Common -isystem /home/coder/project/Common/UtilNPP
 LIBRARIES :=
 
 ################################################################################
@@ -321,22 +321,22 @@ ifeq ($(SAMPLE_ENABLED),0)
 EXEC ?= @echo "[@]"
 endif
 
+SOURCE = ./src
+BIN = ./bin
+DATA = ./data
+
 ################################################################################
 
 # Target rules
 all: build
 
-build: boxFilterNPP
+build: $(BIN)/watermark
 
 OPENCV_FLAGS = $(shell pkg-config --cflags --libs opencv4)
-watermark.o: watermark.cu
+$(BIN)/watermark.o: $(SOURCE)/watermark.cu
 	$(EXEC) $(NVCC) $(OPENCV_FLAGS) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
-watermark: watermark.o
+$(BIN)/watermark: $(BIN)/watermark.o
 	$(EXEC) $(NVCC) $(OPENCV_FLAGS) $(ALL_LDFLAGS) $(GENCODE_FLAGS) -o $@ $+ $(LIBRARIES)
-	$(EXEC) mkdir -p ../../bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)
-	$(EXEC) cp $@ ../../bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)
-watermark_run:
-	$(EXEC) ./watermark data/image.jpg data/watermark.png
 
 check.deps:
 ifeq ($(SAMPLE_ENABLED),0)
@@ -345,19 +345,10 @@ else
 	@echo "Sample is ready - all dependencies have been met"
 endif
 
-boxFilterNPP.o:boxFilterNPP.cpp
-	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
-
-boxFilterNPP: boxFilterNPP.o
-	$(EXEC) $(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) -o $@ $+ $(LIBRARIES)
-	$(EXEC) mkdir -p ../../bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)
-	$(EXEC) cp $@ ../../bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)
-
 run: build
-	$(EXEC) ./boxFilterNPP
+	$(EXEC) $(BIN)/watermark $(DATA)/image.jpg $(DATA)/watermark.png
 
 clean:
-	rm -f boxFilterNPP boxFilterNPP.o jpeg_example jpeg_example.o watermark watermark.o output.jpg watermark.png
-	rm -rf ../../bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)/boxFilterNPP ../../bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)/jpeg_example ../../bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)/watermark
+	rm -f bin/watermark bin/watermark.o output.png
 
 clobber: clean

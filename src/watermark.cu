@@ -120,12 +120,9 @@ __global__ void watermark_kernel(uchar *dImg, uchar *dWatermark, int nPixels)
 
 void launch_watermark_kernel(cv::Mat mImg, cv::Mat mWatermark, cv::Mat &mOut)
 {
-  // DEBUG(1, "watermark channels: %d\n", mWatermark.channels());
   cv::Mat mWatermarkResized;
   cv::resize(mWatermark, mWatermarkResized, mImg.size(), cv::INTER_LINEAR);
 
-  // cv::Mat mAlpha;
-  // cv::extractChannel(mWatermark, mAlpha, 3);
   DEBUG(1, "watermark channels: %d\n", mWatermark.channels());
   DEBUG(1, "mImg step: %d\n", mImg.step);
   DEBUG(1, "mWatermarkResized step: %d\n", mWatermarkResized.step);
@@ -135,10 +132,7 @@ void launch_watermark_kernel(cv::Mat mImg, cv::Mat mWatermark, cv::Mat &mOut)
 
   uchar *dImg;
   uchar *dWatermark;
-  // uchar *dAlpha;
 
-  // int nImgElements = mImg.total()*mImg.elemSize();
-  // int nWatermarkElements = mWatermarkResized.total()*mWatermarkResized.elemSize();
   assert(mImg.channels() == mWatermarkResized.channels()-1);
   int imgSize = mImg.total()*mImg.elemSize();
   int watermarkSize = mWatermarkResized.total()*mWatermarkResized.elemSize();
@@ -151,23 +145,6 @@ void launch_watermark_kernel(cv::Mat mImg, cv::Mat mWatermark, cv::Mat &mOut)
   if(err != cudaSuccess){
     fprintf(stderr, "cudaMalloc dWatermark failed: %s\n", cudaGetErrorString(err));
     std::exit(EXIT_FAILURE);
-  }
-  // err = cudaMalloc((void **) &dAlpha, sizeAlpha);
-  // if(err != cudaSuccess){
-  //   fprintf(stderr, "cudaMalloc dAlpha failed: %s\n", cudaGetErrorString(err));
-  //   std::exit(EXIT_FAILURE);
-  // }
-  printf("mWater.step[0]=%d mWater.step[1]=%d\n", mWatermarkResized.step[0], mWatermarkResized.step[1]);
-  for(int r=0; r<mWatermarkResized.rows; ++r){
-    for(int c=0; c<mWatermarkResized.cols; ++c){
-        for(int ch=3; ch<mWatermarkResized.channels(); ++ch){
-            // printf("r c ch idx = %d %d %d %d\n", r, c, ch, (mWatermarkResized.channels()*mWatermarkResized.step[0]*r) + (mWatermarkResized.channels()*c) + ch);
-            uchar val = mWatermarkResized.data[(mWatermarkResized.channels()*mWatermarkResized.step[0]*r) + (mWatermarkResized.channels()*c) + ch];
-            // uchar val = 0;
-             if(val > 0)
-               printf("mWatermarkResized: %d\n", val);
-        }
-    }
   }
 
   err = cudaMemcpy(dImg, mImg.data, imgSize, cudaMemcpyHostToDevice);
@@ -184,13 +161,6 @@ void launch_watermark_kernel(cv::Mat mImg, cv::Mat mWatermark, cv::Mat &mOut)
       fprintf(stderr, "%s\n", cudaGetErrorString(err));
       std::exit(EXIT_FAILURE);
   }
-  // err = cudaMemcpy(dAlpha, mAlpha.data, sizeAlpha, cudaMemcpyHostToDevice);
-  // if (err != cudaSuccess)
-  // {
-  //     fprintf(stderr, "cudaMemcpy dAlpha mAlpha Error:\n");
-  //     fprintf(stderr, "%s\n", cudaGetErrorString(err));
-  //     std::exit(EXIT_FAILURE);
-  // }
 
   int blockSize, gridSize;
   err = cudaOccupancyMaxPotentialBlockSize(&gridSize, &blockSize, watermark_kernel);
@@ -198,7 +168,6 @@ void launch_watermark_kernel(cv::Mat mImg, cv::Mat mWatermark, cv::Mat &mOut)
   DEBUG(1, "pre kernel launch\n");
   int nPixels = mImg.total();
   watermark_kernel<<<gridSize, blockSize>>>(dImg, dWatermark, nPixels);
-  // watermark_kernel<<<gridSize, blockSize>>>(dImg, dWatermark, dAlpha, nElements);
   err = cudaDeviceSynchronize();
   if (err != cudaSuccess)
   {
@@ -216,101 +185,38 @@ void launch_watermark_kernel(cv::Mat mImg, cv::Mat mWatermark, cv::Mat &mOut)
       std::exit(EXIT_FAILURE);
   }
   cv::Mat out(mImg.size(), mImg.type(), data);
-  imwrite("output.jpg", out);
-  imwrite("watermark.png", mWatermarkResized);
-
+  mOut = out;
+  return;
 }
 
 int main(int argc, char *argv[])
 {
   printf("%s Starting...\n\n", argv[0]);
 
-    findCudaDevice(argc, (const char **)argv);
+  findCudaDevice(argc, (const char **)argv);
 
-    if (printfNPPinfo(argc, argv) == false)
-    {
-      exit(EXIT_SUCCESS);
-    }
-
-    if(argc != 3 && argc != 4){
-      printf("Usage: %s <img-filename.png> <watermark-filename.png> [output.png]\nOutput defaults to output.png\n", argv[0]);
-      exit(1);
-    }
-
-    ensureFileOpens(argv[1]);
-    ensureFileOpens(argv[2]);
-    std::string sImgFile = argv[1];
-    std::string sWatermarkFile = argv[2];
-    std::string sOutputFile = (argc == 4) ? argv[3] : "output.png";
-
-    cv::Mat mImg = cv::imread(argv[1], cv::IMREAD_COLOR);
-    // cv::Mat mWatermark = cv::imread(argv[2], cv::IMREAD_COLOR);
-    cv::Mat mWatermark = cv::imread(argv[2], cv::IMREAD_UNCHANGED);
-
-    cv::Mat mOut;
-    // cv::Mat mImg = cv::imread(argv[1], cv::IMREAD_GRAYSCALE);
-    // cv::Mat mWatermark = cv::imread(argv[2], cv::IMREAD_GRAYSCALE);
-    launch_watermark_kernel(mImg, mWatermark, mOut);
-
-    /*
-    // declare a host image object for an 8-bit grayscale image
-    npp::ImageCPU_8u_C1 oHostSrc;
-    // load gray-scale image from disk
-    npp::loadImage(sFilename, oHostSrc);
-    // declare a device image and copy construct from the host image,
-    // i.e. upload host to device
-    npp::ImageNPP_8u_C1 oDeviceSrc(oHostSrc);
-
-    // create struct with box-filter mask size
-    NppiSize oMaskSize = {5, 5};
-
-    NppiSize oSrcSize = {(int)oDeviceSrc.width(), (int)oDeviceSrc.height()};
-    NppiPoint oSrcOffset = {0, 0};
-
-    // create struct with ROI size
-    NppiSize oSizeROI = {(int)oDeviceSrc.width(), (int)oDeviceSrc.height()};
-    // allocate device image of appropriately reduced size
-    npp::ImageNPP_8u_C1 oDeviceDst(oSizeROI.width, oSizeROI.height);
-    // set anchor point inside the mask to (oMaskSize.width / 2,
-    // oMaskSize.height / 2) It should round down when odd
-    NppiPoint oAnchor = {oMaskSize.width / 2, oMaskSize.height / 2};
-
-    // run box filter
-    NPP_CHECK_NPP(nppiFilterBoxBorder_8u_C1R(
-        oDeviceSrc.data(), oDeviceSrc.pitch(), oSrcSize, oSrcOffset,
-        oDeviceDst.data(), oDeviceDst.pitch(), oSizeROI, oMaskSize, oAnchor,
-        NPP_BORDER_REPLICATE));
-
-    // declare a host image for the result
-    npp::ImageCPU_8u_C1 oHostDst(oDeviceDst.size());
-    // and copy the device result data into it
-    oDeviceDst.copyTo(oHostDst.data(), oHostDst.pitch());
-
-    saveImage(sResultFilename, oHostDst);
-    std::cout << "Saved image: " << sResultFilename << std::endl;
-
-    nppiFree(oDeviceSrc.data());
-    nppiFree(oDeviceDst.data());
-
+  if (printfNPPinfo(argc, argv) == false)
+  {
     exit(EXIT_SUCCESS);
   }
-  catch (npp::Exception &rException)
-  {
-    std::cerr << "Program error! The following exception occurred: \n";
-    std::cerr << rException << std::endl;
-    std::cerr << "Aborting." << std::endl;
 
-    exit(EXIT_FAILURE);
+  if(argc != 3 && argc != 4){
+    printf("Usage: %s <img-filename.png> <watermark-filename.png> [output.png]\nOutput defaults to output.png\n", argv[0]);
+    exit(1);
   }
-  catch (...)
-  {
-    std::cerr << "Program error! An unknow type of exception occurred. \n";
-    std::cerr << "Aborting." << std::endl;
 
-    exit(EXIT_FAILURE);
-    return -1;
-  }
-  */
+  ensureFileOpens(argv[1]);
+  ensureFileOpens(argv[2]);
+  std::string sImgFile = argv[1];
+  std::string sWatermarkFile = argv[2];
+  std::string sOutputFile = (argc == 4) ? argv[3] : "output.png";
+
+  cv::Mat mImg = cv::imread(argv[1], cv::IMREAD_COLOR);
+  cv::Mat mWatermark = cv::imread(argv[2], cv::IMREAD_UNCHANGED);
+
+  cv::Mat mOut;
+  launch_watermark_kernel(mImg, mWatermark, mOut);
+  imwrite(sOutputFile, mOut);
 
   return 0;
 }
