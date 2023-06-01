@@ -11,6 +11,8 @@ git submodule --init --recursive
 make clean build run
 ```
 
+output.png will contain the sample images overlayed using an alpha filter.
+
 ## Overlay custom images
 
 NOTE: the watermark MUST be an RGBA transparent .png file. Not all .png files are RGBA transparent. I have had luck using [this tool to convert images to RGBA transparent .png files](https://fconvert.com/image/convert-to-png/). Select `Depth color: 32 (True color, RGBA, transparent)` and download the converted image. For more information regarding types of .png files, click [here](http://www.libpng.org/pub/png/book/chapter08.html#png.ch08.div.5.8).

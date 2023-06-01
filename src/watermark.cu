@@ -48,8 +48,7 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
 
-static int debug_level = 1;
-// #define DEBUG(level, format) DEBUG(level, format, ) 
+static int debug_level = 0;
 #define DEBUG(level, format, ...) if(debug_level >= level) printf(format __VA_OPT__(,) __VA_ARGS__)
 
 bool printfNPPinfo(int argc, char *argv[])
@@ -92,7 +91,6 @@ void ensureFileOpens(char const *filename){
   return;
 }
 
-//__global__ void watermark_kernel(uchar *dImg, uchar *dWatermark, uchar *dAlpha, int nElements)
 __global__ void watermark_kernel(uchar *dImg, uchar *dWatermark, int nPixels)
 {
     for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nPixels; i += blockDim.x * gridDim.x) 
@@ -100,17 +98,13 @@ __global__ void watermark_kernel(uchar *dImg, uchar *dWatermark, int nPixels)
         // for row r, col c, channel ch:
         //   cv::Mat data field layout is array[(nchannels*mat.step*r) + (nchannels*c) + ch];
         //   See: https://stackoverflow.com/questions/37040787/opencv-in-memory-mat-representation
-        // int alphaIdx = i/3; // 1 channel instead of 3. 
-          // dImg[i] = (uchar) (alpha*dImg[i] + (1.0-alpha)*dImg[i]);
-        //   float alpha = ((float) dAlpha[alphaIdx])/255.0;
-        //   dImg[i] = (uchar) (alpha*dImg[i] + (1.0-alpha)*dWatermark[i]);
         int bIdx = 3*i;
         int gIdx = 3*i+1;
         int rIdx = 3*i+2;
         uchar bWater = dWatermark[4*i];
         uchar gWater = dWatermark[4*i+1];
         uchar rWater = dWatermark[4*i+2];
-        float alpha = ((float) dWatermark[4*i+3])/255.0f; ///255.0f;
+        float alpha = ((float) dWatermark[4*i+3])/255.0f;
         dImg[bIdx] = (uchar) ((1.0-alpha)*dImg[bIdx] + alpha*bWater);
         dImg[gIdx] = (uchar) ((1.0-alpha)*dImg[gIdx] + alpha*gWater);
         dImg[rIdx] = (uchar) ((1.0-alpha)*dImg[rIdx] + alpha*rWater);
